@@ -1,7 +1,6 @@
 # 532movieDownloader
 Download movies from 532movie website in BNU
 
-The excutable program is zipped as bin.rar for windows platform. It has been tested on win 10 x64 operation system.
 
 ui.ui is the pyqt5 file to design the user interface. To use pyqt5, use pip command line: pip install pyqt5,pyqt5-tools
 
