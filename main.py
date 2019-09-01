@@ -14,12 +14,17 @@ import time
 import subprocess
 import glob
 
-
+threads_list=[]#子线程列表
 
 class MyWindow(QMainWindow, ui.Ui_MainWindow):
     def __init__(self, parent=None):
         super(MyWindow, self).__init__(parent)
         self.setupUi(self)
+    def closeEvent(self, event):
+        for thread in threads_list:
+            if thread.poll()==None:
+                thread.terminate()
+        event.accept()
 
 def start(url,textlbl,btn_login):
     textlbl.clear()
@@ -46,7 +51,28 @@ def start(url,textlbl,btn_login):
     mergets()
     textlbl.append("Code transferring......")
     try:
-        ffmpeg()
+        p=ffmpeg()
+        counter=0
+        while True:
+            counter+=1
+            status=p.poll()
+            if status!=None:
+                if status==0:
+                    break
+                else:
+                    textlbl.append("编码转换失败，请联系技术人员解决!")
+                    btn_login.setDisabled(False)
+                    return
+            else:
+                if(counter>2):
+                    counter=1
+                if(counter==1):
+                    textlbl.append('code transferring, please wait O(∩_∩)O')
+                else:
+                    textlbl.append('code transferring, please wait (#^.^#)')
+            QApplication.processEvents()
+            time.sleep(1)
+
     except:
         textlbl.append("编码转换失败，请联系技术人员解决!")
         btn_login.setDisabled(False)
@@ -64,7 +90,6 @@ def start(url,textlbl,btn_login):
 def get_tf_resources(playurl,textlbl):
     resp=functions.login(playurl)
     resources_list = re.findall('http://.*?ts', resp)
-    print(resources_list)
     textlbl.append('------------Movie resources retrived successfully-------------')
     for i in resources_list:
         textlbl.append(i)
@@ -95,8 +120,11 @@ def mergets():
                 f.write(f2.read())
 
 def ffmpeg():
-    subprocess.call(os.getcwd()+r'\ffmpeg\bin\ffmpeg.exe -i '+os.getcwd()+r'\downloads\movie.ts -vcodec h264 '+os.getcwd()+r'\downloads\movie.mp4')
-    QApplication.processEvents()
+    if (os.path.exists(r'downloads\movie.mp4')):
+        os.remove(r'downloads\movie.mp4')
+    p=subprocess.Popen(os.getcwd()+r'\ffmpeg\bin\ffmpeg.exe -i '+os.getcwd()+r'\downloads\movie.ts -vcodec h264 '+os.getcwd()+r'\downloads\movie.mp4')
+    threads_list.append(p)
+    return p
 
 #删除临时文件
 def clean():
@@ -118,3 +146,5 @@ if __name__ == '__main__':
     myWin.btn_login.clicked.connect(lambda:start(myWin.label_movieUrl.text(),myWin.textlbl,myWin.btn_login))
     myWin.show()
     sys.exit(app.exec_())
+
+
